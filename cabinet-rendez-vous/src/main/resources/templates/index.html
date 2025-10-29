@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cabinet Médical</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .stat-card { color:#fff; border:0 }
+    .stat-total { background:#0ea5e9 }
+    .stat-confirmed { background:#0f766e }
+    .stat-canceled { background:#dc2626 }
+    .section-title { font-weight:700 }
+    .filter-card { background:#f8fafc; border:0 }
+    .tab-content-card { border-top-left-radius:0 }
+  </style>
+</head>
+<body class="bg-white">
+  <nav class="navbar navbar-expand-lg" style="background:#0b5ed7">
+    <div class="container">
+      <a class="navbar-brand text-white fw-bold" href="#">
+        <i class="bi bi-hospital me-2"></i>Cabinet Médical
+      </a>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card stat-card stat-total text-center py-4">
+          <div class="display-6 fw-bold" th:text="${statTotal}">0</div>
+          <div>Total Rendez-vous</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card stat-card stat-confirmed text-center py-4">
+          <div class="display-6 fw-bold" th:text="${statConfirmed}">0</div>
+          <div>Confirmés</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card stat-card stat-canceled text-center py-4">
+          <div class="display-6 fw-bold" th:text="${statCancelled}">0</div>
+          <div>Annulés</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card filter-card mb-3">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <i class="bi bi-search me-2"></i>
+          <span class="fs-5 section-title">Filtres</span>
+        </div>
+        <form class="row g-3 align-items-end" method="get" action="/">
+          <div class="col-md-3">
+            <label class="form-label">Statut</label>
+            <select class="form-select" name="statut">
+              <option value="">Tous</option>
+              <option>Confirmé</option>
+              <option>Annulé</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Médecin</label>
+            <select class="form-select" name="medecinId">
+              <option value="">Tous</option>
+              <option th:each="m : ${medecins}" th:text="${m.nom}" th:value="${m.id}">Médecin</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Spécialité</label>
+            <select class="form-select" name="specialite">
+              <option value="">Toutes</option>
+              <option th:each="s : ${specialites}" th:text="${s}">Spécialité</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Date</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+              <input type="date" class="form-control" name="dateFiltre">
+            </div>
+          </div>
+
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Filtrer</button>
+              <a href="/" class="btn btn-secondary">Réinitialiser</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="rdv-tab" data-bs-toggle="tab" data-bs-target="#rdv" type="button" role="tab">
+          <i class="bi bi-calendar2-week me-1"></i>Rendez-vous
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="patients-tab" data-bs-toggle="tab" data-bs-target="#patients" type="button" role="tab">
+          <i class="bi bi-people me-1"></i>Patients
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="medecins-tab" data-bs-toggle="tab" data-bs-target="#medecins" type="button" role="tab">
+          <i class="bi bi-person-badge me-1"></i>Médecins
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
+          <i class="bi bi-bar-chart-line me-1"></i>Statistiques
+        </button>
+      </li>
+    </ul>
+    <div class="tab-content border border-top-0 p-3 rounded-bottom tab-content-card" id="mainTabsContent">
+      <div class="tab-pane fade show active" id="rdv" role="tabpanel" aria-labelledby="rdv-tab">
+        <h3 class="section-title mb-3">Gestion des Rendez-vous</h3>
+        <div class="accordion mb-4" id="addRdv">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button bg-primary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#addRdvBody">
+                <i class="bi bi-plus-lg me-2"></i>Ajouter un Rendez-vous
+              </button>
+            </h2>
+            <div id="addRdvBody" class="accordion-collapse collapse show" data-bs-parent="#addRdv">
+              <div class="accordion-body">
+                  <form class="row g-3" method="post" action="/rendez-vous/add">
+                      <div class="col-md-6">
+                          <label class="form-label">Nom</label>
+                          <input type="text" class="form-control" name="nom" required>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">Statut</label>
+                          <select class="form-select" name="statut">
+                              <option selected>Confirmé</option>
+                              <option>Annulé</option>
+                          </select>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">Patient</label>
+                          <select class="form-select" name="patientId" required>
+                              <option value="" selected>Sélectionnez un patient</option>
+                              <option th:each="p : ${patients}" th:value="${p.id}" th:text="${p.nom}">Patient</option>
+                          </select>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">Médecin</label>
+                          <select class="form-select" name="medecinId" required>
+                              <option value="" selected>Sélectionnez un médecin</option>
+                              <option th:each="m : ${medecins}" th:value="${m.id}" th:text="${m.nom}">Médecin</option>
+                          </select>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">Date et heure</label>
+                          <input type="datetime-local" class="form-control" name="dateHeure" required>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">Motif</label>
+                          <input type="text" class="form-control" name="motif">
+                      </div>
+                      <div class="col-12 d-flex gap-2">
+                          <button type="submit" class="btn btn-success">Enregistrer</button>
+                          <button type="reset" class="btn btn-outline-secondary">Annuler</button>
+                      </div>
+                  </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nom</th>
+                <th>Patient</th>
+                <th>Médecin</th>
+                <th>Spécialité</th>
+                <th>Date</th>
+                <th>Statut</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="rv : ${rendezVous}">
+                <td th:text="${rv.nom}">Nom</td>
+                <td th:text="${rv.patient.nom}">Patient</td>
+                <td th:text="${rv.medecin.nom}">Médecin</td>
+                <td th:text="${rv.medecin.specialite}">Spécialité</td>
+                <td th:text="${#dates.format(rv.rv_pk.dateHeure, 'yyyy-MM-dd HH:mm')}">Date</td>
+                <td>
+                  <span class="badge" th:classappend="${rv.statut=='Confirmé'} ? ' text-bg-success' : (${rv.statut=='Annulé'} ? ' text-bg-danger' : ' text-bg-secondary')" th:text="${rv.statut}">Statut</span>
+                </td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-primary" th:href="@{'/rendez-vous/edit'(patientId=${rv.rv_pk.patientId}, medecinId=${rv.rv_pk.medecinId}, dateHeure=${T(com.example.cabinet_rendez_vous.controller.RendezVousController).formatDateForUrl(rv.rv_pk.dateHeure)})}"><i class="bi bi-pencil"></i> Modifier statut</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="patients" role="tabpanel" aria-labelledby="patients-tab">
+        <h3 class="section-title mb-3">Gestion des Patients</h3>
+        <div class="card mb-3">
+          <div class="card-header">Ajouter un patient</div>
+          <div class="card-body">
+            <form class="row g-3" method="post" action="/patients/add">
+              <div class="col-md-4">
+                <label class="form-label">Nom</label>
+                <input class="form-control" type="text" name="nom" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">CIN</label>
+                <input class="form-control" type="text" name="cin" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Date de naissance</label>
+                <input class="form-control" type="date" name="dateNaissance" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input class="form-control" type="email" name="email" required>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="assurance" name="assurance">
+                  <label class="form-check-label" for="assurance">Assurance</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <button class="btn btn-success" type="submit">Ajouter</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nom</th>
+                <th>CIN</th>
+                <th>Date de naissance</th>
+                <th>Assurance</th>
+                <th>Email</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="p : ${patients}">
+                <td th:text="${p.nom}">Nom</td>
+                <td th:text="${p.cin}">CIN</td>
+                <td th:text="${p.dateNaissance}">YYYY-MM-DD</td>
+                <td>
+                  <span class="badge" th:classappend="${p.assurance} ? ' text-bg-success' : ' text-bg-secondary'" th:text="${p.assurance} ? 'Oui' : 'Non'">Assurance</span>
+                </td>
+                <td th:text="${p.email}">email</td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-primary" th:href="@{'/patients/edit'(id=${p.id})}"><i class="bi bi-pencil"></i></a>
+                  <a class="btn btn-sm btn-outline-danger" th:href="@{'/patients/delete'(id=${p.id})}" onclick="return confirm('Supprimer ce patient ? Ses RDV seront annulés.');"><i class="bi bi-trash"></i></a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="medecins" role="tabpanel" aria-labelledby="medecins-tab">
+        <h3 class="section-title mb-3">Gestion des Médecins</h3>
+        <div class="card mb-3">
+          <div class="card-header">Ajouter un médecin</div>
+          <div class="card-body">
+            <form class="row g-3" method="post" action="/medecins/add">
+              <div class="col-md-4">
+                <label class="form-label">Nom</label>
+                <input class="form-control" type="text" name="nom" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Spécialité</label>
+                <input class="form-control" type="text" name="specialite" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input class="form-control" type="email" name="email" required>
+              </div>
+              <div class="col-12">
+                <button class="btn btn-success" type="submit">Ajouter</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nom</th>
+                <th>Spécialité</th>
+                <th>Email</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="m : ${medecins}">
+                <td th:text="${m.nom}">Nom</td>
+                <td th:text="${m.specialite}">Spécialité</td>
+                <td th:text="${m.email}">Email</td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-primary" th:href="@{'/medecins/edit'(id=${m.id})}"><i class="bi bi-pencil"></i></a>
+                  <a class="btn btn-sm btn-outline-danger" th:href="@{'/medecins/delete'(id=${m.id})}" onclick="return confirm('Supprimer ce médecin ? Ses RDV seront annulés.');"><i class="bi bi-trash"></i></a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+        <h3 class="section-title mb-3">Statistiques</h3>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">RDV par spécialité</div>
+              <div class="card-body"><canvas id="chartSpecialite"></canvas></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">RDV par mois</div>
+              <div class="card-body"><canvas id="chartMonth"></canvas></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">Patients par jour</div>
+              <div class="card-body"><canvas id="chartDay"></canvas></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">Taux d'annulation</div>
+              <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="display-6"><span th:text="${noShowRate}">0</span>%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script th:inline="javascript">
+    // Afficher spécialité auto selon le médecin choisi
+    (function(){
+      const medSelect = document.getElementById('selectMedecin');
+      const specInput = document.getElementById('medecinSpecialite');
+      if(medSelect && specInput){
+        medSelect.addEventListener('change', function(){
+          const opt = medSelect.options[medSelect.selectedIndex];
+          const spec = opt ? opt.getAttribute('data-specialite') : '';
+          specInput.value = spec || '';
+          specInput.placeholder = spec ? '' : "— Sélectionnez d'abord le médecin —";
+        });
+      }
+    })();
+    // Activer l'onglet via ?tab=
+    (function(){
+      const url = new URL(window.location.href);
+      const tab = url.searchParams.get('tab');
+      if(tab){
+        const trigger = document.querySelector(`[data-bs-target="#${tab}"]`);
+        if(trigger){ new bootstrap.Tab(trigger).show(); }
+      }
+    })();
+
+    // Charts
+    const specialiteData = /*[[${specialiteDataJSON}]]*/ '{}';
+    const monthData = /*[[${monthDataJSON}]]*/ '{}';
+    const dayData = /*[[${dayDataJSON}]]*/ '{}';
+    try {
+      const spec = JSON.parse(specialiteData);
+      const ctx1 = document.getElementById('chartSpecialite');
+      if(ctx1 && spec.labels){ new Chart(ctx1, { type:'bar', data: spec, options:{responsive:true} }); }
+    } catch(e) {}
+    try {
+      const mdata = JSON.parse(monthData);
+      const ctx2 = document.getElementById('chartMonth');
+      if(ctx2 && mdata.labels){ new Chart(ctx2, { type:'line', data: mdata, options:{responsive:true} }); }
+    } catch(e) {}
+    try {
+      const ddata = JSON.parse(dayData);
+      const ctx3 = document.getElementById('chartDay');
+      if(ctx3 && ddata.labels){ new Chart(ctx3, { type:'line', data: ddata, options:{responsive:true} }); }
+    } catch(e) {}
+  </script>
+</body>
+</html>
